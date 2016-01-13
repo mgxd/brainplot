@@ -1,14 +1,5 @@
-#om_py_plots_surfs.py
-
-#generates a variety of types of brains on openmind
-
-#1-8-16: Use the following command to run
-####  export QT_API=pyqt
-
-# To run windowless:
-
-####xvfb-run --server-args="-screen 0 1024x768x24" python om_py_plot_surfs.py
-
+# export QT_API=pyqt
+# xvfb-run --server-args="-screen 0 1024x768x24" python nobar_plot_surfs.py
 import matplotlib.pyplot as plt
 import os
 from glob import glob
@@ -19,20 +10,21 @@ from mayavi import mlab
 from tvtk.api import tvtk
 import math
 
-# Change these to fit your data
 
 base = '/om/project/voice/processedData/l1analysis/l1output_20151202' ##
 
 model = 'model200' ##
 
-tasks = ["task001","task002","task003","task005","task006","task007"]
+#depends on model
+tasks = ["task001","task002","task003","task005","task006","task007"] 
 
-#where the images will save
+
 output_dir = '/om/project/voice/processedData/plots/speech_baseline/cool' ##
 
 
 
-img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii')
+img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii') ##
+
 mim = img.header.matrix.mims[1]
 bm1 = mim.brainModels[0]
 lidx = bm1.vertexIndices.indices
@@ -60,8 +52,8 @@ def rotation_matrix(axis, theta):
 axis = [0, 0, 1]
 theta = np.pi
 
-inflated = True ## Semi-inflated and Inflated
-split_brain = True ## Split or whole brain
+inflated = True
+split_brain = True
 
 surf = gifti.read('32k_ConteAtlas_v2/Conte69.L.midthickness.32k_fs_LR.surf.gii') #inflated.32k_fs_LR.surf.gii')
 
@@ -103,11 +95,11 @@ else:
 verts_rot = np.vstack((verts_L_display, verts2))
 verts = np.vstack((verts_L_data, verts_R_data))
 
-# Loads zstat for subject
-def useZstat(zstat,task,subj):
+
+def useZstat(zstat,task,subj): 
     img = nb.load(zstat)
-    threshold = 2.3 # activation threshold
-    display_threshold = 6 # max/min for uniformity
+    threshold = 2.3 # 1000
+    display_threshold = 6 #8000
 
     data = img.get_data()
     aff = img.affine
@@ -134,20 +126,25 @@ def useZstat(zstat,task,subj):
         vmin = -maxval
         vmax = maxval
         nlabels = 3
+        vmin = -display_threshold ######
+        vmax = display_threshold ######
     elif negative:
         vmin = scalars.min()
         if vmin < -display_threshold:
             vmin = -display_threshold
         vmax = 0
+        vmin = -display_threshold ######
     elif positive:
         vmax = scalars.max()
         if vmax > display_threshold:
             vmax = display_threshold
         vmin = 0
+        vmax = display_threshold #######
     print zstat
     
+    # 12/8 edit
     
-    dual_split = True ## further splitting
+    dual_split = True ######
 
     fig1 = mlab.figure(1, bgcolor=(0, 0, 0))
     mlab.clf()
@@ -189,8 +186,8 @@ def useZstat(zstat,task,subj):
     surf.module_manager.scalar_lut_manager.show_scalar_bar = False
     surf.module_manager.scalar_lut_manager.show_legend = False
     surf.module_manager.scalar_lut_manager.label_text_property.font_size = 10
-    surf.module_manager.scalar_lut_manager.show_scalar_bar = True #displays bar
-    surf.module_manager.scalar_lut_manager.show_legend = True #displays legend
+    surf.module_manager.scalar_lut_manager.show_scalar_bar = True # show bar
+    surf.module_manager.scalar_lut_manager.show_legend = True # show bar
     mlab.draw()
 
     translate = [0, 0, 0]
@@ -212,40 +209,24 @@ def useZstat(zstat,task,subj):
     
     os.chdir(output_dir)
 
-    figname = '%s_%s.png' % (subj,task) #savename
-
-    #figname = '%s_%s_%s.png' % (subj,task,num)
+    figname = '%s_%s.png' % (subj,task)
     
     mlab.savefig(figname, figure=fig1, magnification=5)
 
-# runs through all subjects
-# export QT_API=pyqt
 
-#for task in tasks:
-#    print '-----%s-----' % (task)
-#    taskdir = os.path.join(base,task)
-#    contrasts = next(os.walk(taskdir))[1]
-#    
-#    for contrast in contrasts:
-#        if 'raw' in contrast:
-#            continue
-#        for num in ['1','2','3','4']:
-#            contrastnum = 'contrast_%s' % (num)        
-#            subpath = (os.path.join(taskdir,contrast,'stats',contrastnum,'zstat1_threshold.nii.gz'))
-#            print subpath
-#            useZstat(subpath)
-#            visualize(task,contrast,num)
+# runs through all subjects
+
 
 for task in tasks:
     print '-------%s-------' % (task.upper())
-    taskdir = os.path.join(base,model,task,model,task)
-    #subjs = next(os.walk(taskdir))[1] #takes all dirs in next directory
-    subjs = ['voice999'] #specific subjs
-
+    taskdir = os.path.join(base,model,task,model,task) ## change to fit data
+    subjs = next(os.walk(taskdir))[1]  #os.listdir probably better
+    #subjs = ['voice999'] # indiv subjs
+    
     for subj in subjs:
-        if subj[:5] != 'voice': #eliminate non subject dir 
+        if subj[:5] != 'voice':
             continue
-        #for num in ['01','02']: #contrast
+        #for num in ['01','02']:
         #zNum = 'zstat_%s' % (num)        
-        subpath = os.path.join(taskdir,subj,'zstats','mni','zstat01.nii.gz') ## depends on contrast
+        subpath = os.path.join(taskdir,subj,'zstats','mni','zstat01.nii.gz') ##
         useZstat(subpath,task,subj)
