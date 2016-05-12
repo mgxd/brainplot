@@ -1,5 +1,5 @@
-# export QT_API=pyqt
-# xvfb-run --server-args="-screen 0 1024x768x24" python nobar_plot_surfs.py
+# xvfb-run --server-args="-screen 0 1024x768x24" python om_py_plot_surfs.py
+
 import matplotlib.pyplot as plt
 import os
 from glob import glob
@@ -11,21 +11,27 @@ from tvtk.api import tvtk
 import math
 
 
-base = '/om/project/voice/processedData/l1analysis/l1output_20151202' ##
+#mlab.options.offscreen = True #offscreen window for rendering
 
-model = 'model200' ##
+base = '/gablab/p/mtbi/fmri_results/group_20160209/' ##
+###base = '/Users/MathiasMacbook/Desktop/test'
+#l1output = '' ##
+
+model = 'model100' ##
 
 #depends on model
-tasks = ["task001","task002","task003","task005","task006","task007"] 
+tasks = ["task001","task002","task003"] ##
+
+#make this later
+output_dir = '/gablab/p/mtbi/fmri_results/brimgs/feb_report/session1' ##
+###output_dir = '/Users/MathiasMacbook/Desktop/Gablab/texas/'
 
 
-output_dir = '/om/project/voice/processedData/plots/speech_baseline/cool' ##
-
-
-
-img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii') ##
-
+img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii')
+#img = nb.load('/Users/MathiasMacbook/Desktop/rfMRI_REST1_LR_Atlas.dtseries.nii')
 mim = img.header.matrix.mims[1]
+#for idx, bm in enumerate(mim.brainModels):
+#    print((idx, bm.indexOffset, bm.brainStructure))
 bm1 = mim.brainModels[0]
 lidx = bm1.vertexIndices.indices
 bm2 = mim.brainModels[1]
@@ -55,20 +61,24 @@ theta = np.pi
 inflated = True
 split_brain = True
 
-surf = gifti.read('32k_ConteAtlas_v2/Conte69.L.midthickness.32k_fs_LR.surf.gii') #inflated.32k_fs_LR.surf.gii')
+surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.L.midthickness.32k_fs_LR.surf.gii') #inflated.32k_fs_LR.surf.gii')
+#surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.L.midthickness.32k_fs_LR.surf.gii')
 
 verts_L_data = surf.darrays[0].data
 faces_L_data = surf.darrays[1].data
 
-surf = gifti.read('32k_ConteAtlas_v2/Conte69.R.midthickness.32k_fs_LR.surf.gii') #inflated.32k_fs_LR.surf.gii')
+surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.R.midthickness.32k_fs_LR.surf.gii') #inflated.32k_fs_LR.surf.gii')
+#surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.R.midthickness.32k_fs_LR.surf.gii')
 verts_R_data = surf.darrays[0].data
 faces_R_data = surf.darrays[1].data
 
 if inflated:
-    surf = gifti.read('32k_ConteAtlas_v2/Conte69.L.inflated.32k_fs_LR.surf.gii')
+    surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.L.inflated.32k_fs_LR.surf.gii')
+    #surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.L.inflated.32k_fs_LR.surf.gii')
     verts_L_display = surf.darrays[0].data
     faces_L_display = surf.darrays[1].data
-    surf = gifti.read('32k_ConteAtlas_v2/Conte69.R.inflated.32k_fs_LR.surf.gii')
+    surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.R.inflated.32k_fs_LR.surf.gii')
+    #surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.R.inflated.32k_fs_LR.surf.gii')
     verts_R_display = surf.darrays[0].data
     faces_R_display = surf.darrays[1].data
 else:
@@ -94,10 +104,13 @@ else:
 
 verts_rot = np.vstack((verts_L_display, verts2))
 verts = np.vstack((verts_L_data, verts_R_data))
+#print verts.shape
+#print faces.shape
 
-
-def useZstat(zstat,task,subj): 
+def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
+    #img = nb.load(('task_neurovault/task003_l2contrast_one_sample_l1contrast_5_audio_threshold.nii.gz'))
     img = nb.load(zstat)
+    #img = nb.load(('/software/mnt/group_redo/model002/task001/control_co/stats/palm/contrast_1/palm_tfce_ztstat.nii.gz'))
     threshold = 2.3 # 1000
     display_threshold = 6 #8000
 
@@ -139,12 +152,11 @@ def useZstat(zstat,task,subj):
         if vmax > display_threshold:
             vmax = display_threshold
         vmin = 0
-        vmax = display_threshold #######
-    print zstat
+        vmax = display_threshold ######
+    #print zstat
     
-    # 12/8 edit
     
-    dual_split = True ######
+    dual_split = True
 
     fig1 = mlab.figure(1, bgcolor=(0, 0, 0))
     mlab.clf()
@@ -186,8 +198,8 @@ def useZstat(zstat,task,subj):
     surf.module_manager.scalar_lut_manager.show_scalar_bar = False
     surf.module_manager.scalar_lut_manager.show_legend = False
     surf.module_manager.scalar_lut_manager.label_text_property.font_size = 10
-    surf.module_manager.scalar_lut_manager.show_scalar_bar = True # show bar
-    surf.module_manager.scalar_lut_manager.show_legend = True # show bar
+    surf.module_manager.scalar_lut_manager.show_scalar_bar = True
+    surf.module_manager.scalar_lut_manager.show_legend = True
     mlab.draw()
 
     translate = [0, 0, 0]
@@ -207,26 +219,30 @@ def useZstat(zstat,task,subj):
     
     mlab.view(0, 90.0, zoom, translate)
     
+    #figname = '%s_%s.png' % (sub,task)
+
     os.chdir(output_dir)
 
-    figname = '%s_%s.png' % (subj,task)
+    figname = '%s-%s-%s.png' % (task,contrast,num)
     
     mlab.savefig(figname, figure=fig1, magnification=5)
 
 
-# runs through all subjects
-
-
+# doing things to stuff
 for task in tasks:
-    print '-------%s-------' % (task.upper())
-    taskdir = os.path.join(base,model,task,model,task) ## change to fit data
-    subjs = next(os.walk(taskdir))[1]  #os.listdir probably better
-    #subjs = ['voice999'] # indiv subjs
+    print '-----%s-----' % (task)
+    taskdir = os.path.join(base,model,task)
+    #contrasts = os.listdir(taskdir) #os.listdir?
     
-    for subj in subjs:
-        if subj[:5] != 'voice':
-            continue
-        #for num in ['01','02']:
-        #zNum = 'zstat_%s' % (num)        
-        subpath = os.path.join(taskdir,subj,'zstats','mni','zstat01.nii.gz') ##
-        useZstat(subpath,task,subj)
+    for contrast in os.listdir(taskdir):
+        #if 'raw' in contrast:
+        #    continue
+        cons = os.path.join(taskdir,contrast,'stats')
+        for x in os.listdir(cons):
+        #for num in ['1','2']:
+            #currcon = 'contrast_%d' % (i+1)        
+            subpath = (os.path.join(cons,x,'zstat1.nii.gz'))
+            #if os.path.exists(subpath):
+            print "Converting:\n" + subpath
+            useZstat(subpath,task,contrast,x[-1])
+            print "Finished!\n"
