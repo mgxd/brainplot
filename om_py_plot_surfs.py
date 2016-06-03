@@ -43,6 +43,7 @@ def make_plot(stat, task, contrast, num, outdir, inflated,
     except:
         print('File missing - message mathiasg@mit.edu')
         raise FileNotFoundError
+    mim=img.header.matrix.mims[1]
     try:
         bm1 = mim.brain_models[0]
         lidx = bm1.vertex_indices.indices
@@ -199,7 +200,7 @@ def plot_stats(base, tasks, outdir, atlas_dir, inflated=True,
         print('-----%s-----'%task)
         taskdir = os.path.join(base,task)
         for contrast in os.listdir(taskdir):
-            cons = os.path.join(taskdir,contrast,'stats')
+            cons = os.path.join(taskdir,contrast)
             for x in os.listdir(cons):
                 subpath = os.path.join(cons,x,'zstat1.nii.gz')
                 print("Converting:\n" + subpath)
@@ -209,12 +210,6 @@ def plot_stats(base, tasks, outdir, atlas_dir, inflated=True,
                 print("Finished!\n")
 
 if __name__ == '__main__':
-    docstr = '\n'.join((__doc__,
-"""
-           Example:
-           python om_py_plot_surfs.py -d mydata/zstats -t task001 task002 task003 -th 2.5
-s3
-"""))
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--data_dir',
                         dest='data_dir',
