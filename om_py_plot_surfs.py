@@ -249,7 +249,7 @@ s3
     args = parser.parse_args()
     plot_stats(args.data_dir, args.tasks,
                os.path.abspath(args.outputdir),
-               atlas_dir=os.path.abspath('32k_ConteAtlas_v2')
+               atlas_dir=os.path.abspath('32k_ConteAtlas_v2'),
                inflated=args.inflated,
                split_brain=args.split_brain,
                dual_split=args.dual_split,
