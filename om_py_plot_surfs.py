@@ -70,7 +70,7 @@ def make_plot(stat, task, contrast, num, outdir, inflated,
         surf = gifti.read(os.path.join(atlas_dir,'Conte69.L.inflated.32k_fs_LR.surf.gii'))
         verts_L_display = surf.darrays[0].data
         faces_L_display = surf.darrays[1].data
-        surf = gifti.read((os.path.join(atlas_dir,'Conte69.R.inflated.32k_fs_LR.surf.gii'))
+        surf = gifti.read(os.path.join(atlas_dir,'Conte69.R.inflated.32k_fs_LR.surf.gii'))
         verts_R_display = surf.darrays[0].data
         faces_R_display = surf.darrays[1].data
     else:
