@@ -2,7 +2,6 @@
 
 import matplotlib.pyplot as plt
 import os
-from glob import glob
 import numpy as np
 import nibabel as nb
 import nibabel.gifti as gifti
@@ -10,26 +9,14 @@ from mayavi import mlab
 from tvtk.api import tvtk
 import math
 import argparse
-
-# ARGPARSE THESE
-base = '/gablab/p/mtbi/fmri_results/group_20160209/' ##
-model = 'model100' ##
-tasks = ["task001","task002","task003"] ##
-output_dir = '/gablab/p/mtbi/fmri_results/brimgs/feb_report/session1' ##
-
-
-img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii')
-# FLIP THSES
-try:
-    bm1 = mim.brainModels[0]
-    lidx = bm1.vertexIndices.indices
-    bm2 = mim.brainModels[1]
-    ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
-except AttributeError:
-    bm1 = mim.brain_models[0]
-    lidx = bm1.vertex_indices.indices
-    bm2 = mim.brain_models[1]
-    ridx = bm1.surface_number_of_vertices + bm2.vertex_indices.indices
+import sip
+sip.setapi('QDate', 2)
+sip.setapi('QString', 2)
+sip.setapi('QTextStream', 2)
+sip.setapi('QTime', 2)
+sip.setapi('QUrl', 2)
+sip.setapi('QVariant', 2)
+sip.setapi('QDateTime', 2)
 
 def rotation_matrix(axis, theta):
     """
@@ -47,65 +34,66 @@ def rotation_matrix(axis, theta):
                      [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
-axis = [0, 0, 1]
-theta = np.pi
 
-inflated = True
-split_brain = True
-
-surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.L.midthickness.32k_fs_LR.surf.gii') #inflated.32k_fs_LR.surf.gii')
-#surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.L.midthickness.32k_fs_LR.surf.gii')
-
-verts_L_data = surf.darrays[0].data
-faces_L_data = surf.darrays[1].data
-
-surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.R.midthickness.32k_fs_LR.surf.gii') #inflated.32k_fs_LR.surf.gii')
-#surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.R.midthickness.32k_fs_LR.surf.gii')
-verts_R_data = surf.darrays[0].data
-faces_R_data = surf.darrays[1].data
-
-if inflated:
-    surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.L.inflated.32k_fs_LR.surf.gii')
-    #surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.L.inflated.32k_fs_LR.surf.gii')
-    verts_L_display = surf.darrays[0].data
-    faces_L_display = surf.darrays[1].data
-    surf = gifti.read('/om/user/mathiasg/visuals/32k_ConteAtlas_v2/Conte69.R.inflated.32k_fs_LR.surf.gii')
-    #surf = gifti.read('/Users/MathiasMacbook/Desktop/32k_ConteAtlas_v2/Conte69.R.inflated.32k_fs_LR.surf.gii')
-    verts_R_display = surf.darrays[0].data
-    faces_R_display = surf.darrays[1].data
-else:
-    verts_L_display = verts_L_data.copy()
-    verts_R_display = verts_R_data.copy()
-    faces_L_display = faces_L_data.copy()
-    faces_R_display = faces_R_data.copy()
-
-verts_L_display[:, 0] -= max(verts_L_display[:, 0])
-verts_R_display[:, 0] -= min(verts_R_display[:, 0])
-verts_L_display[:, 1] -= (max(verts_L_display[:, 1]) + 1)
-verts_R_display[:, 1] -= (max(verts_R_display[:, 1]) + 1)
-
-faces = np.vstack((faces_L_display, verts_L_display.shape[0] + faces_R_display))
-
-if split_brain:
-    verts2 = rotation_matrix(axis, theta).dot(verts_R_display.T).T
-else:
-    verts_L_display[:, 1] -= np.mean(verts_L_display[:, 1])
-    verts_R_display[:, 1] -= np.mean(verts_R_display[:, 1])
-    verts2 = verts_R_display
-    
-
-verts_rot = np.vstack((verts_L_display, verts2))
-verts = np.vstack((verts_L_data, verts_R_data))
-#print verts.shape
-#print faces.shape
-
-def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
-    #img = nb.load(('task_neurovault/task003_l2contrast_one_sample_l1contrast_5_audio_threshold.nii.gz'))
-    img = nb.load(zstat)
-    #img = nb.load(('/software/mnt/group_redo/model002/task001/control_co/stats/palm/contrast_1/palm_tfce_ztstat.nii.gz'))
-    threshold = 2.3 # 1000
-    display_threshold = 6 #8000
-
+def make_plot(stat, task, contrast, num, outdir, inflated,
+              split_brain, dual_split, threshold,
+              display_threshold, atlas_dir):
+    # load from here until can include
+    try:
+        img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii')
+    except:
+        print('File missing - message mathiasg@mit.edu')
+        raise FileNotFoundError
+    try:
+        bm1 = mim.brain_models[0]
+        lidx = bm1.vertex_indices.indices
+        bm2 = mim.brain_models[1]
+        ridx = bm1.surface_number_of_vertices + bm2.vertex_indices.indices
+    except AttributeError: #older citfi version
+        bm1 = mim.brainModels[0]
+        lidx = bm1.vertexIndices.indices
+        bm2 = mim.brainModels[1]
+        ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
+    bidx = np.concatenate((lidx, ridx))
+    axis = [0, 0, 1]
+    theta = np.pi
+    try:
+        surf = gifti.read(os.path.join(atlas_dir,'Conte69.L.midthickness.32k_fs_LR.surf.gii'))
+    except:
+        print('Atlas not found - pass in path with flag -a')
+        raise FileNotFoundError
+    verts_L_data = surf.darrays[0].data
+    faces_L_data = surf.darrays[1].data
+    surf = gifti.read((os.path.join(atlas_dir,'Conte69.R.midthickness.32k_fs_LR.surf.gii'))
+    verts_R_data = surf.darrays[0].data
+    faces_R_data = surf.darrays[1].data
+    if inflated:
+        surf = gifti.read((os.path.join(atlas_dir,'Conte69.L.inflated.32k_fs_LR.surf.gii'))
+        verts_L_display = surf.darrays[0].data
+        faces_L_display = surf.darrays[1].data
+        surf = gifti.read((os.path.join(atlas_dir,'Conte69.R.inflated.32k_fs_LR.surf.gii'))
+        verts_R_display = surf.darrays[0].data
+        faces_R_display = surf.darrays[1].data
+    else:
+        verts_L_display = verts_L_data.copy()
+        verts_R_display = verts_R_data.copy()
+        faces_L_display = faces_L_data.copy()
+        faces_R_display = faces_R_data.copy()
+    verts_L_display[:, 0] -= max(verts_L_display[:, 0])
+    verts_R_display[:, 0] -= min(verts_R_display[:, 0])
+    verts_L_display[:, 1] -= (max(verts_L_display[:, 1]) + 1)
+    verts_R_display[:, 1] -= (max(verts_R_display[:, 1]) + 1)
+    faces = np.vstack((faces_L_display, verts_L_display.shape[0] + faces_R_display))
+    if split_brain:
+        verts2 = rotation_matrix(axis, theta).dot(verts_R_display.T).T
+    else:
+        verts_L_display[:, 1] -= np.mean(verts_L_display[:, 1])
+        verts_R_display[:, 1] -= np.mean(verts_R_display[:, 1])
+        verts2 = verts_R_display
+    verts_rot = np.vstack((verts_L_display, verts2))
+    verts = np.vstack((verts_L_data, verts_R_data))
+    #load stat
+    img = nb.load(stat)
     data = img.get_data()
     aff = img.affine
     indices = np.round((np.linalg.pinv(aff).dot(np.hstack((verts, 
@@ -114,13 +102,11 @@ def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
     scalars2[np.abs(scalars2) < threshold] = 0.
     scalars = np.zeros(verts.shape[0])
     scalars[bidx] = scalars2[bidx]
-
     negative = positive = False
     if np.any(scalars < 0):
         negative = True
     if np.any(scalars > 0):
         positive = True
-
     nlabels = 2
     vmin = 0
     vmax = 0
@@ -131,25 +117,20 @@ def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
         vmin = -maxval
         vmax = maxval
         nlabels = 3
-        vmin = -display_threshold ######
-        vmax = display_threshold ######
+        vmin = -display_threshold
+        vmax = display_threshold
     elif negative:
         vmin = scalars.min()
         if vmin < -display_threshold:
             vmin = -display_threshold
         vmax = 0
-        vmin = -display_threshold ######
+        vmin = -display_threshold
     elif positive:
         vmax = scalars.max()
         if vmax > display_threshold:
             vmax = display_threshold
         vmin = 0
-        vmax = display_threshold ######
-    #print zstat
-    
-    
-    dual_split = True
-
+        vmax = display_threshold
     fig1 = mlab.figure(1, bgcolor=(0, 0, 0))
     mlab.clf()
     mesh = tvtk.PolyData(points=verts_rot, polys=faces)
@@ -167,7 +148,6 @@ def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
         surf2 = mlab.pipeline.surface(mesh2, colormap='autumn', vmin=vmin, vmax=vmax)
     colorbar = mlab.colorbar(surf, nb_labels=nlabels) #, orientation='vertical')
     lut = surf.module_manager.scalar_lut_manager.lut.table.to_array()
-
     if negative and positive:
         half_index = lut.shape[0] / 2
         index =  int(half_index * threshold / vmax)
@@ -183,7 +163,6 @@ def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
         lut[:index, :] = 192
         lut[index:, :] = 255 * plt.cm.autumn(np.linspace(0, 255, lut.shape[0] - index).astype(int))
     lut[:, -1] = 255
-
     surf.module_manager.scalar_lut_manager.lut.table = lut
     if dual_split:
         surf2.module_manager.scalar_lut_manager.lut.table = lut
@@ -193,7 +172,6 @@ def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
     surf.module_manager.scalar_lut_manager.show_scalar_bar = True
     surf.module_manager.scalar_lut_manager.show_legend = True
     mlab.draw()
-
     translate = [0, 0, 0]
     if inflated:
         zoom = -700
@@ -208,42 +186,34 @@ def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
             zoom = -750
         else:
             zoom = -570
-    
     mlab.view(0, 90.0, zoom, translate)
-    
-    #figname = '%s_%s.png' % (sub,task)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    #os.chdir(outdir)
+    outname = '%s-%s-%s.png' % (task,contrast,num)
+    mlab.savefig(os.path.join(outdir,outname), figure=fig1, magnification=5)
 
-    os.chdir(output_dir)
-
-    figname = '%s-%s-%s.png' % (task,contrast,num)
-    
-    mlab.savefig(figname, figure=fig1, magnification=5)
-
-
-def make_plots():
-for task in tasks:
-    print '-----%s-----' % (task)
-    taskdir = os.path.join(base,model,task)
-    #contrasts = os.listdir(taskdir) #os.listdir?
-    
-    for contrast in os.listdir(taskdir):
-        #if 'raw' in contrast:
-        #    continue
-        cons = os.path.join(taskdir,contrast,'stats')
-        for x in os.listdir(cons):
-        #for num in ['1','2']:
-            #currcon = 'contrast_%d' % (i+1)        
-            subpath = (os.path.join(cons,x,'zstat1.nii.gz'))
-            #if os.path.exists(subpath):
-            print "Converting:\n" + subpath
-            useZstat(subpath,task,contrast,x[-1])
-            print "Finished!\n"
+def plot_stats(base, tasks, outdir, atlas_dir, inflated=True,
+               split_brain=True, dual_split=True, threshold=2.3,
+               display_threshold=6):
+    for task in tasks:
+        print('-----%s-----'%task)
+        taskdir = os.path.join(base,task)
+        for contrast in os.listdir(taskdir):
+            cons = os.path.join(taskdir,contrast,'stats')
+            for x in os.listdir(cons):
+                subpath = os.path.join(cons,x,'zstat1.nii.gz')
+                print("Converting:\n" + subpath)
+                make_plot(subpath, task, contrast, x[-1], outdir,
+                          inflated, split_brain, dual_split, 
+                          threshold, display_threshold, atlas_dir)
+                print("Finished!\n")
 
 if __name__ == '__main__':
     docstr = '\n'.join((__doc__,
 """
            Example:
-           python om_py_plot_surfs.py -d mydata/zstats -i -s
+           python om_py_plot_surfs.py -d mydata/zstats -t task001 task002 task003 -th 2.5
 s3
 """))
     parser = argparse.ArgumentParser()
@@ -251,18 +221,24 @@ s3
                         dest='data_dir',
                         required=True,
                         help='''location of the data to plot''')
+    parser.add_argument('-t', '--tasks', dest='tasks', required=True,
+                        type=str, nargs='+', help='''list of tasks to get
+                        contrasts''')
     parser.add_argument('-o', '--outdir', dest='outputdir',
                         default=os.getcwd(),
                         help='''output directory for resulting images''')
-    parser.add_argument('-a', '--atlasdir', dest='atlas',
-                        default=os.getcwd(),
+    parser.add_argument('-a', '--atlas', dest='atlas_dir',
+                        default=os.path.abspath(32k_ConteAtlas_v2),
                         help='''brain atlas directory, default cwd''')
     parser.add_argument('-i', '--inflated', dest='inflated',
-                        required=True, default=False, action='store_true',
-                        help='''outputs inflated brain image''')
+                        default=True, action='store_false',
+                        help='''disable inflated brain image''')
     parser.add_argument('-s', '--split', dest='split_brain',
-                        required=True, default=False, action='store_true',
-                        help='''outputs split brain image''')
+                        default=True, action='store_false',
+                        help='''disable split brain image''')
+    parser.add_argument('-ss', '--duosplit', dest='dual_split',
+                        default=True, action='store_false',
+                        help='''disable dualsplit brain image''')
     parser.add_argument('-th', '--threshold', dest='threshold',
                         type=float, default=2.3,
                         help='''set threshold value (default=2.3) - must
@@ -271,8 +247,12 @@ s3
                         type=int, default=6,
                         help='''set min/max for thresholded values - must
                         be an int''')
-    parser.add_argument('-t', '--tasks', dest='tasks', required=True,
-                        type=str, nargs='+', help='''list of tasks to get
-                        contrasts''')
     args = parser.parse_args()
-    plot_stats(args go here)##
+    plot_stats(args.data_dir, args.tasks,
+               os.path.abspath(args.outputdir),
+               atlas_dir=os.path.abspath(32k_ConteAtlas_v2)
+               inflated=args.inflated,
+               split_brain=args.split_brain,
+               dual_split=args.dual_split,
+               threshold=args.threshold,
+               display_threshold=args.display_threshold)
