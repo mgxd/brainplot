@@ -2,6 +2,7 @@
 ####Currently only supports openfmri group-level analysis
 
 ####How to Use
+* Install [CIFTI](https://github.com/satra/nibabel/tree/enh/cifti2) version of nibabel (DISCLAIMER: best to make dedicated environment for this script at the moment)
 * Clone repo (including 32k Atlas)
 * Use commented command at the top to run windowless
 * Specify options with the following flags:
