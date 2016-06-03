@@ -9,35 +9,27 @@ import nibabel.gifti as gifti
 from mayavi import mlab
 from tvtk.api import tvtk
 import math
+import argparse
 
-
-#mlab.options.offscreen = True #offscreen window for rendering
-
+# ARGPARSE THESE
 base = '/gablab/p/mtbi/fmri_results/group_20160209/' ##
-###base = '/Users/MathiasMacbook/Desktop/test'
-#l1output = '' ##
-
 model = 'model100' ##
-
-#depends on model
 tasks = ["task001","task002","task003"] ##
-
-#make this later
 output_dir = '/gablab/p/mtbi/fmri_results/brimgs/feb_report/session1' ##
-###output_dir = '/Users/MathiasMacbook/Desktop/Gablab/texas/'
 
 
 img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii')
-#img = nb.load('/Users/MathiasMacbook/Desktop/rfMRI_REST1_LR_Atlas.dtseries.nii')
-mim = img.header.matrix.mims[1]
-#for idx, bm in enumerate(mim.brainModels):
-#    print((idx, bm.indexOffset, bm.brainStructure))
-bm1 = mim.brainModels[0]
-lidx = bm1.vertexIndices.indices
-bm2 = mim.brainModels[1]
-ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
-bidx = np.concatenate((lidx, ridx))
-
+# FLIP THSES
+try:
+    bm1 = mim.brainModels[0]
+    lidx = bm1.vertexIndices.indices
+    bm2 = mim.brainModels[1]
+    ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
+except AttributeError:
+    bm1 = mim.brain_models[0]
+    lidx = bm1.vertex_indices.indices
+    bm2 = mim.brain_models[1]
+    ridx = bm1.surface_number_of_vertices + bm2.vertex_indices.indices
 
 def rotation_matrix(axis, theta):
     """
@@ -228,7 +220,7 @@ def useZstat(zstat,task,contrast,num): #def useZstat(zstat,sub,task):
     mlab.savefig(figname, figure=fig1, magnification=5)
 
 
-# doing things to stuff
+def make_plots():
 for task in tasks:
     print '-----%s-----' % (task)
     taskdir = os.path.join(base,model,task)
@@ -246,3 +238,41 @@ for task in tasks:
             print "Converting:\n" + subpath
             useZstat(subpath,task,contrast,x[-1])
             print "Finished!\n"
+
+if __name__ == '__main__':
+    docstr = '\n'.join((__doc__,
+"""
+           Example:
+           python om_py_plot_surfs.py -d mydata/zstats -i -s
+s3
+"""))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--data_dir',
+                        dest='data_dir',
+                        required=True,
+                        help='''location of the data to plot''')
+    parser.add_argument('-o', '--outdir', dest='outputdir',
+                        default=os.getcwd(),
+                        help='''output directory for resulting images''')
+    parser.add_argument('-a', '--atlasdir', dest='atlas',
+                        default=os.getcwd(),
+                        help='''brain atlas directory, default cwd''')
+    parser.add_argument('-i', '--inflated', dest='inflated',
+                        required=True, default=False, action='store_true',
+                        help='''outputs inflated brain image''')
+    parser.add_argument('-s', '--split', dest='split_brain',
+                        required=True, default=False, action='store_true',
+                        help='''outputs split brain image''')
+    parser.add_argument('-th', '--threshold', dest='threshold',
+                        type=float, default=2.3,
+                        help='''set threshold value (default=2.3) - must
+                        be a float''')
+    parser.add_argument('-dt', '--displaythresh', dest='display_threshold',
+                        type=int, default=6,
+                        help='''set min/max for thresholded values - must
+                        be an int''')
+    parser.add_argument('-t', '--tasks', dest='tasks', required=True,
+                        type=str, nargs='+', help='''list of tasks to get
+                        contrasts''')
+    args = parser.parse_args()
+    plot_stats(args go here)##
