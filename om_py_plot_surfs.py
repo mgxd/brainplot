@@ -63,7 +63,7 @@ def make_plot(stat, task, contrast, num, outdir, inflated,
         raise FileNotFoundError
     verts_L_data = surf.darrays[0].data
     faces_L_data = surf.darrays[1].data
-    surf = gifti.read((os.path.join(atlas_dir,'Conte69.R.midthickness.32k_fs_LR.surf.gii'))
+    surf = gifti.read(os.path.join(atlas_dir,'Conte69.R.midthickness.32k_fs_LR.surf.gii'))
     verts_R_data = surf.darrays[0].data
     faces_R_data = surf.darrays[1].data
     if inflated:
