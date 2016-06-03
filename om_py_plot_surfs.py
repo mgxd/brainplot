@@ -1,5 +1,12 @@
 # xvfb-run --server-args="-screen 0 1024x768x24" python om_py_plot_surfs.py
-
+import sip
+sip.setapi('QDate', 2)
+sip.setapi('QString', 2)
+sip.setapi('QTextStream', 2)
+sip.setapi('QTime', 2)
+sip.setapi('QUrl', 2)
+sip.setapi('QVariant', 2)
+sip.setapi('QDateTime', 2)
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -9,14 +16,6 @@ from mayavi import mlab
 from tvtk.api import tvtk
 import math
 import argparse
-import sip
-sip.setapi('QDate', 2)
-sip.setapi('QString', 2)
-sip.setapi('QTextStream', 2)
-sip.setapi('QTime', 2)
-sip.setapi('QUrl', 2)
-sip.setapi('QVariant', 2)
-sip.setapi('QDateTime', 2)
 
 def rotation_matrix(axis, theta):
     """
