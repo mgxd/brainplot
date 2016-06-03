@@ -227,7 +227,7 @@ s3
                         default=os.getcwd(),
                         help='''output directory for resulting images''')
     parser.add_argument('-a', '--atlas', dest='atlas_dir',
-                        default=os.path.abspath(32k_ConteAtlas_v2),
+                        default=os.path.abspath('32k_ConteAtlas_v2'),
                         help='''brain atlas directory, default cwd''')
     parser.add_argument('-i', '--inflated', dest='inflated',
                         default=True, action='store_false',
@@ -249,7 +249,7 @@ s3
     args = parser.parse_args()
     plot_stats(args.data_dir, args.tasks,
                os.path.abspath(args.outputdir),
-               atlas_dir=os.path.abspath(32k_ConteAtlas_v2)
+               atlas_dir=os.path.abspath('32k_ConteAtlas_v2')
                inflated=args.inflated,
                split_brain=args.split_brain,
                dual_split=args.dual_split,
