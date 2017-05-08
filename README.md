@@ -2,9 +2,9 @@
 #### Currently only supports openfmri group-level analysis
 
 #### How to Use
-* Nibabel master (after merging nibabel/#249)
+* Nibabel master (after merging nibabel/#249) **Contains CIFTI2 support!**
 * Clone repo (including 32k Atlas)
-* Use commented command at the top to run windowless
+* [Recommended] Use commented command at the top to run windowless
 
 ##### Arguments
   * -d (__required__): path to group results (up to tasks)
