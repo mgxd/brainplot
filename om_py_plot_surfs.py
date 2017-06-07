@@ -7,15 +7,17 @@ sip.setapi('QTime', 2)
 sip.setapi('QUrl', 2)
 sip.setapi('QVariant', 2)
 sip.setapi('QDateTime', 2)
-import matplotlib.pyplot as plt
+
 import os
+import math
+import argparse
+
+import matplotlib.pyplot as plt
 import numpy as np
 import nibabel as nb
 import nibabel.gifti as gifti
 from mayavi import mlab
 from tvtk.api import tvtk
-import math
-import argparse
 
 def rotation_matrix(axis, theta):
     """
@@ -39,10 +41,9 @@ def make_plot(stat, task, contrast, num, outdir, inflated,
               display_threshold, atlas_dir):
     # load from here until can include
     try:
-        img = nb.load('/om/user/mathiasg/rfMRI_REST1_LR_Atlas.dtseries.nii')
+        img = nb.load('/om/user/mathiasg/scripts/templates/rfMRI_REST1_LR_Atlas.dtseries.nii')
     except:
-        print('File missing - message mathiasg@mit.edu')
-        raise FileNotFoundError
+        raise FileNotFoundError('Message mathiasg@mit.edu')
     mim=img.header.matrix.mims[1]
     try:
         bm1 = mim.brain_models[0]
@@ -50,10 +51,13 @@ def make_plot(stat, task, contrast, num, outdir, inflated,
         bm2 = mim.brain_models[1]
         ridx = bm1.surface_number_of_vertices + bm2.vertex_indices.indices
     except AttributeError: #older citfi version
+        Warning('Using deprecrated nibabel, download current master')
         bm1 = mim.brainModels[0]
         lidx = bm1.vertexIndices.indices
         bm2 = mim.brainModels[1]
         ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
+    except:
+        raise AttributeError('This version of Nibabel does not support CITFI')
     bidx = np.concatenate((lidx, ridx))
     axis = [0, 0, 1]
     theta = np.pi
