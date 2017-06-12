@@ -284,7 +284,7 @@ def useZstat(args, conte_atlas, rest_atlas):
     vdisplay.stop()    
 
 def main():    
-    conte_atlas = os.path.abspath('32k_ConteAtlas_v2')
+    conte_atlas = os.path.abspath('Conte69_Atlas')
     rest_atlas = os.path.abspath('/om/user/mathiasg/scripts/templates/rfMRI_REST1_LR_Atlas.dtseries.nii')
 
     import argparse
@@ -301,9 +301,9 @@ def main():
     parser.add_argument('-o', '--outfile', 
                         help='output full file path')
     parser.add_argument('-c', '--conte_atlas', 
-                        help='file path to conte atlas folder')
+                        help='Conte69 32k mesh atlas folder')
     parser.add_argument('-r', '--resting_atlas', 
-                        help='resting atlas nii')
+                        help='Connectome resting atlas')
     parser.add_argument('-t', '--threshold', type=float, default=2.3,
                         help='set threshold (default 2.3)')
     parser.add_argument('-s', '--imagesize', type=int, default=2,
