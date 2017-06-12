@@ -148,8 +148,8 @@ def useZstat(args, conte_atlas, rest_atlas):
     if not args.outfile:
         try:
             outfile = os.path.abspath(
-               [os.path.basename(in_stat).replace(img, 'png') for img in IMAGETYPES 
-                if in_stat.endswith(img)][0])
+               [os.path.basename(args.in_stat).replace(img, 'png') for img in IMAGETYPES 
+                if args.in_stat.endswith(img)][0])
         except IndexError:
             raise AttributeError('Stat file {} not supported. Supported extensions: '
                 '{}'.format(in_stat, ', '.join(IMAGETYPES)))
@@ -248,6 +248,7 @@ def useZstat(args, conte_atlas, rest_atlas):
     surf.module_manager.scalar_lut_manager.show_legend = True
     mlab.draw()
 
+    # specifc to views
     translate = [0, 0, 0]
     if inflated:
         zoom = -700
@@ -263,10 +264,9 @@ def useZstat(args, conte_atlas, rest_atlas):
         else:
             zoom = -570
     
-    #mlab.view(0, 90.0, zoom, translate)
-    mlab.view(9, 90.0, zoom, translate)
+    mlab.view(0, 90)
        
-    mlab.savefig(outfile, figure=fig1, magnification=5)
+    mlab.savefig(outfile, figure=fig1, magnification=args.imagesize)
 
     vdisplay.stop()    
 
@@ -293,6 +293,9 @@ def main():
                         help='resting atlas nii')
     parser.add_argument('-t', '--threshold', type=float, default=2.3,
                         help='set threshold (default 2.3)')
+    parser.add_argument('-s', '--imagesize', type=int, default=2,
+                        choices=range(1,6),
+                        help='set image size; 1-smallest, 5-largest')
     args = parser.parse_args()
   
     if args.conte_atlas:

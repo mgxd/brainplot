@@ -1,4 +1,5 @@
-colors/
 *~
-test.py
-speechbase*.ipynb
+*.swp
+.ipynb_checkpoints/
+testdata/
+faces_gt_object.png
