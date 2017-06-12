@@ -2,4 +2,4 @@
 *.swp
 .ipynb_checkpoints/
 testdata/
-faces_gt_object.png
+*.png

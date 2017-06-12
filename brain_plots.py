@@ -27,7 +27,7 @@ from mayavi import mlab
 from tvtk.api import tvtk
 
 
-def rotation_matrix(axis, theta):
+def rotation_matrix(axis=[0,0,1], theta=np.pi):
     """
     Return the rotation matrix associated with counterclockwise rotation about
     the given axis by theta radians.
@@ -100,12 +100,15 @@ def useZstat(args, conte_atlas, rest_atlas):
     ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
     bidx = np.concatenate((lidx, ridx))
 
-    axis = [0, 0, 1]
-    theta = np.pi
+    #axis = [0, 0, 1]
+    #theta = np.pi
 
     inflated = True
     split_brain = True
     dual_split = True
+    if args.view != 'lat':
+        split_brain, dual_split = False, False
+    
 
     surf = gifti.read(os.path.join(conte_atlas, 'Conte69.L.midthickness.32k_fs_LR.surf.gii')) 
     verts_L_data = surf.darrays[0].data
@@ -136,7 +139,7 @@ def useZstat(args, conte_atlas, rest_atlas):
     faces = np.vstack((faces_L_display, verts_L_display.shape[0] + faces_R_display))
 
     if split_brain:
-        verts2 = rotation_matrix(axis, theta).dot(verts_R_display.T).T
+        verts2 = rotation_matrix().dot(verts_R_display.T).T
     else:
         verts_L_display[:, 1] -= np.mean(verts_L_display[:, 1])
         verts_R_display[:, 1] -= np.mean(verts_R_display[:, 1])
@@ -212,7 +215,7 @@ def useZstat(args, conte_atlas, rest_atlas):
     surf = mlab.pipeline.surface(mesh, colormap='autumn', vmin=vmin, vmax=vmax)
     if dual_split:
         verts_rot_shifted = verts_rot.copy()
-        verts_rot_shifted = rotation_matrix(axis, theta).dot(verts_rot_shifted.T).T
+        verts_rot_shifted = rotation_matrix().dot(verts_rot_shifted.T).T
         verts_rot_shifted[:, 2] -= (np.max(verts_rot_shifted[:, 2]) - np.min(verts_rot_shifted[:, 2]))
         verts_rot_shifted[:, 0] -= np.max(verts_rot_shifted[:, 0])
         mesh2 = tvtk.PolyData(points=verts_rot_shifted, polys=faces)
@@ -254,6 +257,7 @@ def useZstat(args, conte_atlas, rest_atlas):
         zoom = -700
     else:
         zoom = -600
+
     if dual_split:
         if inflated:
             translate = [0,   0, -104.01467148]
@@ -261,10 +265,19 @@ def useZstat(args, conte_atlas, rest_atlas):
             translate = [0,  0, -54.76305802]        
         if inflated:
             zoom = -750
+            if split_brain:
+                zoom = -950
         else:
             zoom = -570
     
-    mlab.view(0, 90)
+    if args.view == 'lat':
+        x, y = 0, 90
+    elif args.view == 'sup':
+        x, y = 0, 180
+    elif args.view == 'inf':
+        x, y = 0, 0
+    
+    mlab.view(x, y, zoom) #zoom, translate
        
     mlab.savefig(outfile, figure=fig1, magnification=args.imagesize)
 
@@ -296,6 +309,9 @@ def main():
     parser.add_argument('-s', '--imagesize', type=int, default=2,
                         choices=range(1,6),
                         help='set image size; 1-smallest, 5-largest')
+    parser.add_argument('--view', default='lat',
+                        choices=['lat', 'sup', 'inf'], # porque no los tres?
+                        help='view of brain: lateral, superior, inferior')
     args = parser.parse_args()
   
     if args.conte_atlas:
@@ -308,4 +324,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
