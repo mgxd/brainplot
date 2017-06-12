@@ -1,20 +1,37 @@
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
 # To run, execute these steps:
 # srun -p om_interactive -N1 -c2 --mem=8G --pty bash
-# source activate mathiasg_vd_env
 # module add openmind/xvfb-fix/0.1
-# export QT_API=pyqt
 # python plot_brain.py -i <input> -o <output> -c <path to conte atlas> -r <path to resting atlas>
 
 # https://github.com/cgoldberg/xvfbwrapper
+
+# set environmental variable
+import os
+os.environ['QT_API'] = 'pyqt'
+
+from glob import glob
+import math
+
+import matplotlib.pyplot as plt
+import numpy as np
+import nibabel as nb
+import nibabel.gifti as gifti
+# Crucial:  xvfb must be imported and started before importing mayavi
+from xvfbwrapper import Xvfb
+vdisplay = Xvfb()
+vdisplay.start()
+# Crashes on this line if run with plain python (not xvfb-run ... python)
+from mayavi import mlab
+from tvtk.api import tvtk
+
 
 def rotation_matrix(axis, theta):
     """
     Return the rotation matrix associated with counterclockwise rotation about
     the given axis by theta radians.
     """    
-    
-    import numpy as np
-    import math
 
     axis = np.asarray(axis)
     theta = np.asarray(theta)
@@ -27,7 +44,7 @@ def rotation_matrix(axis, theta):
                      [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
-def useZstat(zstat, file_path_name_save, file_path_conte, file_path_name_resting_atlas):
+def useZstat(args, conte_atlas, rest_atlas):
     """Plot and save the image.
     
     Arguments
@@ -51,12 +68,10 @@ def useZstat(zstat, file_path_name_save, file_path_conte, file_path_name_resting
     
     Example
     -------
-    python plot_brain.py -i /groupAnalysis/l2/zstat1_threshold.nii.gz -o /plots/l2test.png -c /git/bp2/32k_ConteAtlas_v2 -r rfMRI_REST1_LR_Atlas.dtseries.nii
-    
+        
     MIT OM Specific Tip
     -------------------
-    Call this function from a shell script to run headerless BUT requires:
-    source activate mathiasg_vd_env
+    Call this function from a shell script to run headerless BUT requires:    
     export QT_API=pyqt
     module add openmind/xvfb-fix/0.1
 
@@ -72,30 +87,13 @@ def useZstat(zstat, file_path_name_save, file_path_conte, file_path_name_resting
     
     """
 
-    import matplotlib.pyplot as plt
-    import os
-    from glob import glob
-    import numpy as np
-    import nibabel as nb
-    import nibabel.gifti as gifti
-
-    # Crucial:  xvfb must be imported and started before importing mayavi
-    from xvfbwrapper import Xvfb
-    vdisplay = Xvfb()
-    vdisplay.start()
-
-    # Crashes on this line if run with plain python (not xvfb-run ... python) and if xvfbwrapper is after it.
-    from mayavi import mlab
-    from tvtk.api import tvtk
-    import math
+    IMAGETYPES = ['nii.gz', 'nii', 'gii']
 
     mlab.options.offscreen = True #offscreen window for rendering
-
-    img = nb.load(file_path_name_resting_atlas)
-    #img = nb.load('/Users/MathiasMacbook/Desktop/rfMRI_REST1_LR_Atlas.dtseries.nii')
+    
+    # load the resting atlas
+    img = nb.load(rest_atlas)
     mim = img.header.matrix.mims[1]
-    #for idx, bm in enumerate(mim.brainModels):
-    #    print((idx, bm.indexOffset, bm.brainStructure))
     bm1 = mim.brainModels[0]
     lidx = bm1.vertexIndices.indices
     bm2 = mim.brainModels[1]
@@ -107,20 +105,21 @@ def useZstat(zstat, file_path_name_save, file_path_conte, file_path_name_resting
 
     inflated = True
     split_brain = True
+    dual_split = True
 
-    surf = gifti.read(file_path_conte + '/Conte69.L.midthickness.32k_fs_LR.surf.gii') 
+    surf = gifti.read(os.path.join(conte_atlas, 'Conte69.L.midthickness.32k_fs_LR.surf.gii')) 
     verts_L_data = surf.darrays[0].data
     faces_L_data = surf.darrays[1].data
 
-    surf = gifti.read(file_path_conte + '/Conte69.R.midthickness.32k_fs_LR.surf.gii') 
+    surf = gifti.read(os.path.join(conte_atlas, 'Conte69.R.midthickness.32k_fs_LR.surf.gii'))
     verts_R_data = surf.darrays[0].data
     faces_R_data = surf.darrays[1].data
 
     if inflated:
-        surf = gifti.read(file_path_conte + '/Conte69.L.inflated.32k_fs_LR.surf.gii')
+        surf = gifti.read(os.path.join(conte_atlas, 'Conte69.L.inflated.32k_fs_LR.surf.gii'))
         verts_L_display = surf.darrays[0].data
         faces_L_display = surf.darrays[1].data
-        surf = gifti.read(file_path_conte + '/Conte69.R.inflated.32k_fs_LR.surf.gii')
+        surf = gifti.read(os.path.join(conte_atlas, 'Conte69.R.inflated.32k_fs_LR.surf.gii'))
         verts_R_display = surf.darrays[0].data
         faces_R_display = surf.darrays[1].data
     else:
@@ -145,18 +144,25 @@ def useZstat(zstat, file_path_name_save, file_path_conte, file_path_name_resting
 
     verts_rot = np.vstack((verts_L_display, verts2))
     verts = np.vstack((verts_L_data, verts_R_data))
-    #print verts.shape
-    #print faces.shape
 
-    if not os.path.exists(os.path.split(file_path_name_save)[0]):
-        os.makedirs(os.path.split(file_path_name_save)[0])    
+    if not args.outfile:
+        try:
+            outfile = os.path.abspath(
+               [os.path.basename(in_stat).replace(img, 'png') for img in IMAGETYPES 
+                if in_stat.endswith(img)][0])
+        except IndexError:
+            raise AttributeError('Stat file {} not supported. Supported extensions: '
+                '{}'.format(in_stat, ', '.join(IMAGETYPES)))
+    else:
+        outfile = os.path.abspath(args.outfile)
 
-    print('use zstat')
-    img = nb.load(zstat)
-    print('loaded img')
+    if not os.path.exists(os.path.dirname(outfile)):
+        os.makedirs(os.path.dirname(outfile))    
+
+    img = nb.load(args.in_stat)
     
-    threshold = 2.3 # 1000, lower limit
-    display_threshold = 6 #8000, upper limit
+    threshold = args.threshold 
+    display_threshold = 6 
 
     data = img.get_data()
     aff = img.affine
@@ -183,24 +189,21 @@ def useZstat(zstat, file_path_name_save, file_path_conte, file_path_name_resting
         vmin = -maxval
         vmax = maxval
         nlabels = 3
-        vmin = -display_threshold ######
-        vmax = display_threshold ######
+        vmin = -display_threshold
+        vmax = display_threshold 
     elif negative:
         vmin = scalars.min()
         if vmin < -display_threshold:
             vmin = -display_threshold
         vmax = 0
-        vmin = -display_threshold ######
+        vmin = -display_threshold 
     elif positive:
         vmax = scalars.max()
         if vmax > display_threshold:
             vmax = display_threshold
         vmin = 0
-        vmax = display_threshold ######
-    #print zstat
+        vmax = display_threshold 
     
-    dual_split = True
-
     fig1 = mlab.figure(1, bgcolor=(0, 0, 0))
     mlab.clf()
     mesh = tvtk.PolyData(points=verts_rot, polys=faces)
@@ -261,22 +264,45 @@ def useZstat(zstat, file_path_name_save, file_path_conte, file_path_name_resting
             zoom = -570
     
     #mlab.view(0, 90.0, zoom, translate)
-    mlab.view(9, 90.0)
-
-    print(file_path_name_save)
-   
-    mlab.savefig(file_path_name_save, figure=fig1, magnification=5)
+    mlab.view(9, 90.0, zoom, translate)
+       
+    mlab.savefig(outfile, figure=fig1, magnification=5)
 
     vdisplay.stop()    
 
-if __name__ == '__main__':
+def main():    
+    conte_atlas = os.path.abspath('32k_ConteAtlas_v2')
+    rest_atlas = os.path.abspath('/om/user/mathiasg/scripts/templates/rfMRI_REST1_LR_Atlas.dtseries.nii')
+
     import argparse
+    def existing_file(filename):
+        filename = os.path.abspath(filename)
+        if not os.path.exists(filename):
+            raise argparse.ArgumentTypeError('{} is not an existing file!'.format(filename))
+        return filename
+
     parser = argparse.ArgumentParser(prog='brain_plots.py',
                                      description=__doc__)
-    parser.add_argument('-i', '--input', required=True, help='input full file path and name .nii.gz')
-    parser.add_argument('-o', '--output', required=True, help='output full file pand and name .png')
-    parser.add_argument('-c', '--file_path_conte', help='file path to conte atlas folder')
-    parser.add_argument('-r', '--file_path_name_resting_atlas', help='resting atlas nii')
+    parser.add_argument('in_stat', type=existing_file,
+                        help='input full file path')
+    parser.add_argument('-o', '--outfile', 
+                        help='output full file path')
+    parser.add_argument('-c', '--conte_atlas', 
+                        help='file path to conte atlas folder')
+    parser.add_argument('-r', '--resting_atlas', 
+                        help='resting atlas nii')
+    parser.add_argument('-t', '--threshold', type=float, default=2.3,
+                        help='set threshold (default 2.3)')
     args = parser.parse_args()
   
-    useZstat(args.input, args.output, args.file_path_conte, args.file_path_name_resting_atlas)
+    if args.conte_atlas:
+        conte_atlas = os.path.abspath(args.conte_atlas)
+
+    if args.resting_atlas:
+        rest_atlas = os.path.abspath(args.resting_atlas)
+
+    useZstat(args, conte_atlas, rest_atlas)
+
+if __name__ == '__main__':
+    main()
+
