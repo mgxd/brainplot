@@ -7,25 +7,28 @@
 
 # https://github.com/cgoldberg/xvfbwrapper
 
-# set QT environmental variable
 import os
-os.environ['QT_API'] = 'pyqt'
-
 from glob import glob
 import math
+os.environ['QT_API'] = 'pyqt'
+
+# close xvfb if sudden exit
+import atexit
+@atexit.register
+def close_vtk():
+    vdisplay.stop()
 
 import matplotlib.pyplot as plt
-import numpy as np
 import nibabel as nb
 import nibabel.gifti as gifti
-# Crucial:  xvfb must be imported and started before importing mayavi
-from xvfbwrapper import Xvfb
+
+from xvfbwrapper import Xvfb # import/initialize before mayavi
 vdisplay = Xvfb()
 vdisplay.start()
-# Crashes on this line if run with plain python (not xvfb-run ... python)
+
 from mayavi import mlab
 from tvtk.api import tvtk
-
+import numpy as np
 
 def rotation_matrix(axis=[0,0,1], theta=np.pi):
     """
@@ -49,17 +52,21 @@ def useZstat(args, conte_atlas, rest_atlas):
 
     Arguments
     ---------
-    zstat : string
-        Full file path and name to nii to plot.
+    args : Namespace Object
+        Contains the following argparse attributes:
+            - conte_atlas
+            - imagesize
+            - in_stat
+            - outfile
+            - resting_atlas
+            - threshold
+            - view
 
-    file_path_name_save : string
-        Full file path and name to png output.  Output dir will be created if
-        it doesn't exist.
+    conte_atlas : string
+        Path to Conte69 atlas
 
-    file_path_conte : string
-        Full file path to Conte atlas
-
-    file_path_name_resting_atlas : string
+    rest_atlas : string
+        Path to Connectome Resting atlas
 
     Returns
     -------
@@ -90,19 +97,25 @@ def useZstat(args, conte_atlas, rest_atlas):
 
     IMAGETYPES = ['nii.gz', 'nii', 'gii']
 
-    mlab.options.offscreen = True #offscreen window for rendering
+    #mlab.options.offscreen = True #offscreen window for rendering
 
     # load the resting atlas
     img = nb.load(rest_atlas)
-    mim = img.header.matrix.mims[1]
-    bm1 = mim.brainModels[0]
-    lidx = bm1.vertexIndices.indices
-    bm2 = mim.brainModels[1]
-    ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
-    bidx = np.concatenate((lidx, ridx))
+    try:
+        models = img.header.matrix[1].brain_models
+        bm1 = models.next()
+        lidx = np.array(bm1.vertex_indices)
+        bm2 = models.next()
+        ridx = bm1.surface_number_of_vertices + np.array(bm2.vertex_indices)
+    except AttributeError:
+        Warning('Using deprecated CIFTI support.')
+        mim = img.header.matrix.mims[1]
+        bm1 = mim.brainModels[0]
+        lidx = bm1.vertexIndices.indices
+        bm2 = mim.brainModels[1]
+        ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
 
-    #axis = [0, 0, 1]
-    #theta = np.pi
+    bidx = np.concatenate((lidx, ridx))
 
     inflated = True
     split_brain = True
@@ -160,7 +173,7 @@ def useZstat(args, conte_atlas, rest_atlas):
                [os.path.basename(args.in_stat).replace(img, 'png')
                 for img in IMAGETYPES if args.in_stat.endswith(img)][0])
         except IndexError:
-            raise AttributeError('Stat file {} not supported. Supported
+            raise AttributeError('Stat file {} not supported. Supported '
                 'extensions: {}'.format(in_stat, ', '.join(IMAGETYPES)))
     else:
         outfile = os.path.abspath(args.outfile)
@@ -290,10 +303,8 @@ def useZstat(args, conte_atlas, rest_atlas):
         x, y = 0, 0
 
     mlab.view(x, y, zoom) #zoom, translate
-
     mlab.savefig(outfile, figure=fig1, magnification=args.imagesize)
-
-    vdisplay.stop()
+    #vdisplay.stop()
 
 def main():
     conte_atlas = os.path.abspath('Conte69_Atlas')
