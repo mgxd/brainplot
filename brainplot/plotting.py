@@ -189,22 +189,14 @@ def plot_stat(args, conte_atlas, rest_atlas):
         maxval = max(-scalars.min(), scalars.max())
         if maxval > display_threshold:
             maxval = display_threshold
-        vmin = -maxval
-        vmax = maxval
         nlabels = 3
         vmin = -display_threshold
         vmax = display_threshold
     elif negative:
         vmin = scalars.min()
-        if vmin < -display_threshold:
-            vmin = -display_threshold
-        vmax = 0
         vmin = -display_threshold
     elif positive:
         vmax = scalars.max()
-        if vmax > display_threshold:
-            vmax = display_threshold
-        vmin = 0
         vmax = display_threshold
 
     fig1 = mlab.figure(1, bgcolor=(0, 0, 0))
@@ -228,7 +220,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
     lut = surf.module_manager.scalar_lut_manager.lut.table.to_array()
 
     if negative and positive:
-        half_index = lut.shape[0] / 2
+        half_index = lut.shape[0] // 2
         index =  int(half_index * threshold / vmax)
         lut[(half_index - index + 1):(half_index + index), :] = 192
         lut[(half_index + index):, :] = 255 * plt.cm.autumn(
