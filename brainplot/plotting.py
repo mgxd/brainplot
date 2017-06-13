@@ -10,25 +10,24 @@
 import os
 from glob import glob
 import math
-os.environ['QT_API'] = 'pyqt'
-
-# close xvfb if sudden exit
 import atexit
-@atexit.register
-def close_vtk():
-    vdisplay.stop()
+os.environ['QT_API'] = 'pyqt'
 
 import matplotlib.pyplot as plt
 import nibabel as nb
 import nibabel.gifti as gifti
+import numpy as np
 
-from xvfbwrapper import Xvfb # import/initialize before mayavi
+from xvfbwrapper import Xvfb # before mayavi
 vdisplay = Xvfb()
 vdisplay.start()
-
 from mayavi import mlab
 from tvtk.api import tvtk
-import numpy as np
+
+@atexit.register
+def close_xvfb():
+    """ Closes virtual display when exiting """
+    vdisplay.stop()
 
 def rotation_matrix(axis=[0,0,1], theta=np.pi):
     """
@@ -47,7 +46,25 @@ def rotation_matrix(axis=[0,0,1], theta=np.pi):
                      [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
-def useZstat(args, conte_atlas, rest_atlas):
+def gen_brain_indices(rest_atlas):
+    """ Combine left and right indices from resting atlas """
+    img = nb.load(rest_atlas)
+    try:
+        models = img.header.matrix[1].brain_models
+        bm1 = models.next()
+        lidx = np.array(bm1.vertex_indices)
+        bm2 = models.next()
+        ridx = bm1.surface_number_of_vertices + np.array(bm2.vertex_indices)
+    except TypeError:
+        Warning('Using deprecated CIFTI support.')
+        mim = img.header.matrix.mims[1]
+        bm1 = mim.brainModels[0]
+        lidx = bm1.vertexIndices.indices
+        bm2 = mim.brainModels[1]
+        ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
+    return np.concatenate((lidx, ridx))
+
+def plot_stat(args, conte_atlas, rest_atlas):
     """Plot and save the image.
 
     Arguments
@@ -61,6 +78,7 @@ def useZstat(args, conte_atlas, rest_atlas):
             - resting_atlas
             - threshold
             - view
+            - windowed
 
     conte_atlas : string
         Path to Conte69 atlas
@@ -70,52 +88,15 @@ def useZstat(args, conte_atlas, rest_atlas):
 
     Returns
     -------
-    None.  Normal error message:
-    pixdim[1,2,3] should be non-zero; setting 0 dims to 1
-    plot_brain.py: Fatal IO error: client killed
-
-    Example
-    -------
-
-    MIT OM Specific Tip
-    -------------------
-    Call this function from a shell script to run headerless BUT requires:
-    export QT_API=pyqt
-    module add openmind/xvfb-fix/0.1
-
-    #file_path_name=$1
-    #file_path_name_save=$2
-    #file_path_conte=$3
-    #file_path_name_resting_atlas=$4
-    python plot_brain.py \
-    -i $1 \
-    -o $2 \
-    -c $3 \
-    -r $4
+    None
 
     """
 
     IMAGETYPES = ['nii.gz', 'nii', 'gii']
 
-    #mlab.options.offscreen = True #offscreen window for rendering
+    mlab.options.offscreen = args.windowed
 
-    # load the resting atlas
-    img = nb.load(rest_atlas)
-    try:
-        models = img.header.matrix[1].brain_models
-        bm1 = models.next()
-        lidx = np.array(bm1.vertex_indices)
-        bm2 = models.next()
-        ridx = bm1.surface_number_of_vertices + np.array(bm2.vertex_indices)
-    except AttributeError:
-        Warning('Using deprecated CIFTI support.')
-        mim = img.header.matrix.mims[1]
-        bm1 = mim.brainModels[0]
-        lidx = bm1.vertexIndices.indices
-        bm2 = mim.brainModels[1]
-        ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
-
-    bidx = np.concatenate((lidx, ridx))
+    bidx = gen_brain_indices(rest_atlas)
 
     inflated = True
     split_brain = True
@@ -181,7 +162,7 @@ def useZstat(args, conte_atlas, rest_atlas):
     if not os.path.exists(os.path.dirname(outfile)):
         os.makedirs(os.path.dirname(outfile))
 
-    img = nb.load(args.in_stat)
+    img = nb.load(args.in_stat) # load statistic
 
     threshold = args.threshold
     display_threshold = 6
@@ -302,9 +283,8 @@ def useZstat(args, conte_atlas, rest_atlas):
     elif args.view == 'inf':
         x, y = 0, 0
 
-    mlab.view(x, y, zoom) #zoom, translate
+    mlab.view(x, y, zoom)
     mlab.savefig(outfile, figure=fig1, magnification=args.imagesize)
-    #vdisplay.stop()
 
 def main():
     conte_atlas = os.path.abspath('Conte69_Atlas')
@@ -334,9 +314,11 @@ def main():
     parser.add_argument('-s', '--imagesize', type=int, default=2,
                         choices=range(1,6),
                         help='set image size; 1-smallest, 5-largest')
-    parser.add_argument('--view', default='lat',
+    parser.add_argument('-v', '--view', default='lat',
                         choices=['lat', 'sup', 'inf'], # porque no los tres?
                         help='view of brain: lateral, superior, inferior')
+    parser.add_argument('-w', '--windowed', action='store_false',
+                        help='run windowed')
     args = parser.parse_args()
 
     if args.conte_atlas:
@@ -345,7 +327,7 @@ def main():
     if args.resting_atlas:
         rest_atlas = os.path.abspath(args.resting_atlas)
 
-    useZstat(args, conte_atlas, rest_atlas)
+    plot_stat(args, conte_atlas, rest_atlas)
 
 if __name__ == '__main__':
     main()
