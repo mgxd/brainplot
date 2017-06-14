@@ -24,10 +24,11 @@ vdisplay.start()
 from mayavi import mlab
 from tvtk.api import tvtk
 
-@atexit.register
-def close_xvfb():
-    """ Closes virtual display when exiting """
-    vdisplay.stop()
+# only for mac?
+#@atexit.register
+#def close_xvfb():
+#    """ Closes virtual display when exiting """
+#    vdisplay.stop()
 
 def rotation_matrix(axis=[0,0,1], theta=np.pi):
     """
@@ -64,6 +65,40 @@ def gen_brain_indices(rest_atlas):
         ridx = bm1.surfaceNumberOfVertices + bm2.vertexIndices.indices
     return np.concatenate((lidx, ridx))
 
+def load_conte_mesh(conte_atlas, inflation):
+    """ Load conte69 mesh: load midthickness nomatter what and then other """
+    l_atlas = os.path.join(conte_atlas, 'Conte69.L.{}.32k_fs_LR.surf.gii')
+    r_atlas = l_atlas.replace('Conte69.L.', 'Conte69.R.')
+
+    l_surf = gifti.read(l_atlas.format('midthickness'))
+    verts_L_data, faces_L_data = l_surf.darrays[0].data, l_surf.darrays[1].data
+
+    r_surf = gifti.read(r_atlas.format('midthickness'))
+    verts_R_data, faces_R_data = r_surf.darrays[0].data, r_surf.darrays[1].data
+
+    if inflation != 'low':
+        if inflation == 'medium':
+            inf = 'inflated'
+        elif inflation == 'high':
+            inf = 'very_inflated'
+
+        l_surf2 = gifti.read(l_atlas.format(inf))
+        verts_L_display = l_surf2.darrays[0].data
+        faces_L_display = l_surf2.darrays[1].data
+
+        r_surf2 = gifti.read(r_atlas.format(inf))
+        verts_R_display = r_surf2.darrays[0].data
+        faces_R_display = r_surf2.darrays[1].data
+
+    else:
+        verts_L_display = verts_L_data.copy()
+        verts_R_display = verts_R_data.copy()
+        faces_L_display = faces_L_data.copy()
+        faces_R_display = faces_R_data.copy()
+
+    return (verts_L_data, faces_L_data, verts_R_data, faces_R_data,
+           verts_L_display, verts_R_display, faces_L_display, faces_R_display)
+
 def plot_stat(args, conte_atlas, rest_atlas):
     """Plot and save the image.
 
@@ -79,6 +114,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
             - threshold
             - view
             - windowed
+            - inf_level
 
     conte_atlas : string
         Path to Conte69 atlas
@@ -98,37 +134,15 @@ def plot_stat(args, conte_atlas, rest_atlas):
 
     bidx = gen_brain_indices(rest_atlas)
 
-    inflated = True
+    (verts_L_data, faces_L_data, verts_R_data,
+    faces_R_data, verts_L_display, verts_R_display,
+    faces_L_display, faces_R_display) = load_conte_mesh(conte_atlas,
+                                                        args.inflation)
+
     split_brain = True
     dual_split = True
     if args.view != 'lat':
         split_brain, dual_split = False, False
-
-
-    surf = gifti.read(os.path.join(conte_atlas,
-                                   'Conte69.L.midthickness.32k_fs_LR.surf.gii'))
-    verts_L_data = surf.darrays[0].data
-    faces_L_data = surf.darrays[1].data
-
-    surf = gifti.read(os.path.join(conte_atlas,
-                                   'Conte69.R.midthickness.32k_fs_LR.surf.gii'))
-    verts_R_data = surf.darrays[0].data
-    faces_R_data = surf.darrays[1].data
-
-    if inflated:
-        surf = gifti.read(os.path.join(conte_atlas,
-                                       'Conte69.L.inflated.32k_fs_LR.surf.gii'))
-        verts_L_display = surf.darrays[0].data
-        faces_L_display = surf.darrays[1].data
-        surf = gifti.read(os.path.join(conte_atlas,
-                                       'Conte69.R.inflated.32k_fs_LR.surf.gii'))
-        verts_R_display = surf.darrays[0].data
-        faces_R_display = surf.darrays[1].data
-    else:
-        verts_L_display = verts_L_data.copy()
-        verts_R_display = verts_R_data.copy()
-        faces_L_display = faces_L_data.copy()
-        faces_R_display = faces_R_data.copy()
 
     verts_L_display[:, 0] -= max(verts_L_display[:, 0])
     verts_R_display[:, 0] -= min(verts_R_display[:, 0])
@@ -249,24 +263,19 @@ def plot_stat(args, conte_atlas, rest_atlas):
     surf.module_manager.scalar_lut_manager.show_legend = True
     mlab.draw()
 
-    # specifc to views
-    translate = [0, 0, 0]
-    if inflated:
-        zoom = -700
-    else:
+    # viewing
+    if args.inflation == 'low':
         zoom = -600
+    else:
+        zoom = -700
 
-    if dual_split:
-        if inflated:
-            translate = [0,   0, -104.01467148]
-        else:
-            translate = [0,  0, -54.76305802]
-        if inflated:
+    if split_brain:
+        if args.inflation == 'low':
             zoom = -750
-            if split_brain:
-                zoom = -950
         else:
-            zoom = -570
+            zoom = -750
+            if dual_split:
+                zoom = -950
 
     if args.view == 'lat':
         x, y = 0, 90
@@ -280,7 +289,8 @@ def plot_stat(args, conte_atlas, rest_atlas):
 
 def main():
     conte_atlas = os.path.abspath('Conte69_Atlas')
-    rest_atlas = os.path.abspath('/om/user/mathiasg/scripts/templates/'
+    #rest_atlas = os.path.abspath('/om/user/mathiasg/scripts/templates/'
+    rest_atlas = os.path.abspath('/home/mathias/code/datasets/'
                                  'rfMRI_REST1_LR_Atlas.dtseries.nii')
 
     import argparse
@@ -311,6 +321,10 @@ def main():
                         help='view of brain: lateral, superior, inferior')
     parser.add_argument('-w', '--windowed', action='store_false',
                         help='run windowed')
+    parser.add_argument('-i', '--inflation', default='medium',
+                        choices=['low', 'medium', 'high'],
+                        help='inflation level of generated brain mesh: low, '
+                        'medium, or high')
     args = parser.parse_args()
 
     if args.conte_atlas:
