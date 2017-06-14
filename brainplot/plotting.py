@@ -51,9 +51,9 @@ def gen_brain_indices(rest_atlas):
     img = nb.load(rest_atlas)
     try:
         models = img.header.matrix[1].brain_models
-        bm1 = models.next()
+        bm1 = next(models)
         lidx = np.array(bm1.vertex_indices)
-        bm2 = models.next()
+        bm2 = next(models)
         ridx = bm1.surface_number_of_vertices + np.array(bm2.vertex_indices)
     except TypeError:
         Warning('Using deprecated CIFTI support.')
