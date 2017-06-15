@@ -18,17 +18,17 @@ import nibabel as nb
 import nibabel.gifti as gifti
 import numpy as np
 
-from xvfbwrapper import Xvfb # before mayavi
+from xvfbwrapper import Xvfb
 vdisplay = Xvfb()
 vdisplay.start()
 from mayavi import mlab
 from tvtk.api import tvtk
 
-# only for mac?
-#@atexit.register
-#def close_xvfb():
-#    """ Closes virtual display when exiting """
-#    vdisplay.stop()
+@atexit.register
+def close_xvfb():
+    """ Closes virtual display when exiting; may raise Fatal IO error """
+    vdisplay.stop()
+
 
 def rotation_matrix(axis=[0,0,1], theta=np.pi):
     """
