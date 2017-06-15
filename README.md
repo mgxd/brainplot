@@ -12,14 +12,14 @@
 
 ##### Arguments [defaults in bold]
   * in_stat, path of statistic to map
-  * -o: outfile, *'`in_stat`.png'*
-  * -c: path to Conte69 atlas, *current working directory*
+  * -o: outfile, **'`in_stat`.png'**
+  * -c: path to Conte69 atlas, **working directory**
   * -r: path to HCP 500 resting atlas
-  * -t: set threshold; *2.3*
-  * -s: set image size; 1-smallest, 5-largest, *2*
-  * -v: view of the brain: *lat*, sup, or inf
-  * -i: inflation level of generated brain mesh: low, *medium*, or high
-  * -w: run windowed
+  * -t: set threshold; **2.3**
+  * -s: set image size; 1-smallest, 5-largest, **2**
+  * -v: view of the brain: **lat**, sup, or inf
+  * -i: inflation level of generated brain mesh: low, **medium**, or high
+  * -w: run windowed, *false*
 
 ##### Sample Use
 ```python
