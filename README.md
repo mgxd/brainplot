@@ -25,10 +25,14 @@
 ```python
 python plotting.py /samples/faces_gt_objects.nii
 ```
+<img src=doc/sample/lateral_split_face_gt_object.png width=500px>
 
 ```python
-python plotting.py /samples/faces_gt_objects.nii -i low -v sup -t 2.0
+python plotting.py /samples/faces_gt_objects.nii -v inf
 ```
+<img src=doc/sample/inferior_face_gt_object.png width=500px>
+
+
 
 ###### TODO
 [:)](https://github.com/mgxd/brainplot/projects/1)
