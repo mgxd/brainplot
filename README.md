@@ -25,7 +25,7 @@
 ```python
 python plotting.py /samples/faces_gt_objects.nii
 ```
-<img src=doc/sample/lateral_quad_face_gt_object.png width=500px>
+<img src=doc/sample/lateral_split_face_gt_object.png width=500px>
 
 ```python
 python plotting.py /samples/faces_gt_objects.nii -v inf
