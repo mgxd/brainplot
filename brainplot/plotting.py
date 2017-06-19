@@ -114,7 +114,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
             - threshold
             - view
             - windowed
-            - inf_level
+            - inflation
 
     conte_atlas : string
         Path to Conte69 atlas
