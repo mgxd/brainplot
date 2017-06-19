@@ -257,7 +257,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
         surf2.module_manager.scalar_lut_manager.lut.table = lut
     surf.module_manager.scalar_lut_manager.show_scalar_bar = False
     surf.module_manager.scalar_lut_manager.show_legend = False
-    surf.module_manager.scalar_lut_manager.label_text_property.font_size = 10
+    surf.module_manager.scalar_lut_manager.label_text_property.font_size = 7
     surf.module_manager.scalar_lut_manager.show_scalar_bar = True
     surf.module_manager.scalar_lut_manager.show_legend = True
     mlab.draw()
