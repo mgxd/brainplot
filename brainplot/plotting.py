@@ -114,7 +114,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
             - threshold
             - view
             - windowed
-            - inf_level
+            - inflation
 
     conte_atlas : string
         Path to Conte69 atlas
@@ -140,7 +140,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
                                                         args.inflation)
 
     split_brain = True
-    dual_split = True
+    dual_split = False
     if args.view != 'lat':
         split_brain, dual_split = False, False
 
@@ -149,8 +149,8 @@ def plot_stat(args, conte_atlas, rest_atlas):
     verts_L_display[:, 1] -= (max(verts_L_display[:, 1]) + 1)
     verts_R_display[:, 1] -= (max(verts_R_display[:, 1]) + 1)
 
-    faces = np.vstack((faces_L_display, verts_L_display.shape[0] +
-                       faces_R_display))
+    faces = np.vstack((faces_R_display, verts_R_display.shape[0] +
+                       faces_L_display))
 
     if split_brain:
         verts2 = rotation_matrix().dot(verts_R_display.T).T
@@ -220,8 +220,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
     mesh.point_data.scalars.name = 'scalars'
     surf = mlab.pipeline.surface(mesh, colormap='autumn', vmin=vmin, vmax=vmax)
     if dual_split:
-        verts_rot_shifted = verts_rot.copy()
-        verts_rot_shifted = rotation_matrix().dot(verts_rot_shifted.T).T
+        verts_rot_shifted = rotation_matrix().dot(verts_rot.copy().T).T
         verts_rot_shifted[:, 2] -= (np.max(verts_rot_shifted[:, 2]) -
                                     np.min(verts_rot_shifted[:, 2]))
         verts_rot_shifted[:, 0] -= np.max(verts_rot_shifted[:, 0])
@@ -230,21 +229,21 @@ def plot_stat(args, conte_atlas, rest_atlas):
         mesh2.point_data.scalars.name = 'scalars'
         surf2 = mlab.pipeline.surface(mesh2, colormap='autumn', vmin=vmin,
                                       vmax=vmax)
-    colorbar = mlab.colorbar(surf, nb_labels=nlabels) #, orientation='vertical')
+    colorbar = mlab.colorbar(surf, nb_labels=nlabels)
     lut = surf.module_manager.scalar_lut_manager.lut.table.to_array()
 
     if negative and positive:
         half_index = lut.shape[0] // 2
         index =  int(half_index * threshold / vmax)
-        lut[(half_index - index + 1):(half_index + index), :] = 192
+        lut[(half_index - index):(half_index + index), :] = 192
         lut[(half_index + index):, :] = 255 * plt.cm.autumn(
                           np.linspace(0, 255, half_index - index).astype(int))
-        lut[:(half_index - index), :] = 255 * plt.cm.cool(
+        lut[:(half_index - index), :] = 255 * plt.cm.winter(
                           np.linspace(0, 255, half_index - index).astype(int))
     elif negative:
         index =  int(lut.shape[0] * threshold / abs(vmin))
         lut[(lut.shape[0] - index):, :] = 192
-        lut[:(lut.shape[0] - index), :] = 255 * plt.cm.cool(
+        lut[:(lut.shape[0] - index), :] = 255 * plt.cm.winter(
                           np.linspace(0, 255, lut.shape[0] - index).astype(int))
     elif positive:
         index =  int(lut.shape[0] * threshold / vmax)
@@ -258,7 +257,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
         surf2.module_manager.scalar_lut_manager.lut.table = lut
     surf.module_manager.scalar_lut_manager.show_scalar_bar = False
     surf.module_manager.scalar_lut_manager.show_legend = False
-    surf.module_manager.scalar_lut_manager.label_text_property.font_size = 10
+    surf.module_manager.scalar_lut_manager.label_text_property.font_size = 7
     surf.module_manager.scalar_lut_manager.show_scalar_bar = True
     surf.module_manager.scalar_lut_manager.show_legend = True
     mlab.draw()
@@ -273,7 +272,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
         if args.inflation == 'low':
             zoom = -750
         else:
-            zoom = -750
+            zoom = -800
             if dual_split:
                 zoom = -950
 
