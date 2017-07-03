@@ -289,7 +289,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
 def main():
     conte_atlas = os.path.abspath('Conte69_Atlas')
     #rest_atlas = os.path.abspath('/om/user/mathiasg/scripts/templates/'
-    rest_atlas = os.path.abspath('/home/mathias/code/datasets/'
+    rest_atlas = os.path.abspath('/home/mathiasg/code/datasets/'
                                  'rfMRI_REST1_LR_Atlas.dtseries.nii')
 
     import argparse
