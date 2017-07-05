@@ -1,0 +1,4 @@
+mayavi==4.5
+nibabel>=2.2.0dev
+xvfbwrapper>=0.2.9
+matplotlib>=2.0.0
