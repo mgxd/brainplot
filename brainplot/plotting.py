@@ -139,8 +139,8 @@ def plot_stat(args, conte_atlas, rest_atlas):
     faces_L_display, faces_R_display) = load_conte_mesh(conte_atlas,
                                                         args.inflation)
 
-    split_brain = True
-    dual_split = False
+    split_brain = True # TODO: add options for these
+    dual_split = True
     if args.view != 'lat':
         split_brain, dual_split = False, False
 
