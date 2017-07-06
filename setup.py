@@ -11,17 +11,11 @@ with open (os.path.join('brainplot', '__init__.py'), 'r') as fp:
 if VERSION is None:
     raise RuntimeError('Version information cannot be found')
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 DISTNAME = 'brainplot'
 URL = 'https://github.com/mgxd/brainplot'
 DOWNLOAD_URL = 'https://github.com/mgxd/brainplot/archive/master.zip'
 MAINTAINER = 'Mathias Goncalves'
 MAINTAINER_EMAIL = 'mathiasg@mit.edu'
-
-# until nibabel releases
-links = ['https://github.com/nipy/nibabel/tarball/master#egg=nibabel-2.2.0dev']
 
 if __name__ == '__main__':
     setup(name=DISTNAME,
@@ -31,7 +25,6 @@ if __name__ == '__main__':
           download_url=DOWNLOAD_URL,
           version=VERSION,
           packages=find_packages(),
-          install_requires=requirements,
-          dependency_links=links,
+          install_requires=['mayavi', 'matplotlib', 'xvfbwrapper'],
           entry_points={'console_scripts':
                         ['brainplot=brainplot.plotting:main']})
