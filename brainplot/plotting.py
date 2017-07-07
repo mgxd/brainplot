@@ -21,14 +21,16 @@ import numpy as np
 from xvfbwrapper import Xvfb
 vdisplay = Xvfb()
 vdisplay.start()
-from mayavi import mlab
-from tvtk.api import tvtk
 
 @atexit.register
 def close_xvfb():
     """ Closes virtual display when exiting; may raise Fatal IO error """
     vdisplay.stop()
 
+from mayavi import mlab
+from tvtk.api import tvtk
+
+from .utils import CONTE69_ATLAS, REST_ATLAS
 
 def rotation_matrix(axis=[0,0,1], theta=np.pi):
     """
@@ -287,10 +289,8 @@ def plot_stat(args, conte_atlas, rest_atlas):
     mlab.savefig(outfile, figure=fig1, magnification=args.imagesize)
 
 def main():
-    conte_atlas = os.path.abspath('Conte69_Atlas')
-    #rest_atlas = os.path.abspath('/om/user/mathiasg/scripts/templates/'
-    rest_atlas = os.path.abspath('/home/mathias/code/datasets/'
-                                 'rfMRI_REST1_LR_Atlas.dtseries.nii')
+    conte_atlas = CONTE69_ATLAS
+    rest_atlas = REST_ATLAS
 
     import argparse
     def existing_file(filename):
@@ -331,6 +331,12 @@ def main():
 
     if args.resting_atlas:
         rest_atlas = os.path.abspath(args.resting_atlas)
+
+    if not os.path.exists(conte_atlas):
+        raise IOError('Surfaces atlas not found.')
+
+    if not os.path.exists(rest_atlas):
+        raise IOError('Rest atlas not found.')
 
     plot_stat(args, conte_atlas, rest_atlas)
 
