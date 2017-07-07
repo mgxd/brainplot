@@ -332,10 +332,10 @@ def main():
     if args.resting_atlas:
         rest_atlas = os.path.abspath(args.resting_atlas)
 
-    if not conte_atlas or not os.path.exists(conte_atlas):
+    if not os.path.exists(conte_atlas):
         raise IOError('Surfaces atlas not found.')
 
-    if not rest_atlas or not os.path.exists(rest_atlas):
+    if not os.path.exists(rest_atlas):
         raise IOError('Rest atlas not found.')
 
     plot_stat(args, conte_atlas, rest_atlas)
