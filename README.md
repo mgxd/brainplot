@@ -3,7 +3,7 @@
 
 #### Installation
 
-* `git clone [[ repository ]] && cd [[ x ]]`
+* `git clone [[ repository ]] && cd [[ repository ]]`
 * `pip install -r requirements.txt`
 
 
