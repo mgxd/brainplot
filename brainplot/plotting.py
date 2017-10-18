@@ -1,11 +1,4 @@
-# vi: set ft=python sts=4 ts=4 sw=4 et:
-
-# To run, execute these steps:
-# srun -p om_interactive -N1 -c2 --mem=8G --pty bash
-# module add openmind/xvfb-fix/0.1
-# python plot_brain.py <input_statistic>
-
-# https://github.com/cgoldberg/xvfbwrapper
+# vi: set ft=python sts=4 ts=4 sw=4 et
 
 import os
 from glob import glob
@@ -112,7 +105,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
             - imagesize
             - in_stat
             - outfile
-            - resting_atlas
+            - rest_atlas
             - threshold
             - view
             - windowed
@@ -171,7 +164,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
                 for img in IMAGETYPES if args.in_stat.endswith(img)][0])
         except IndexError:
             raise AttributeError('Stat file {} not supported. Supported '
-                'extensions: {}'.format(in_stat, ', '.join(IMAGETYPES)))
+                'extensions: {}'.format(args.in_stat, ', '.join(IMAGETYPES)))
     else:
         outfile = os.path.abspath(args.outfile)
 
@@ -201,6 +194,7 @@ def plot_stat(args, conte_atlas, rest_atlas):
     nlabels = 2
     vmin = 0
     vmax = 0
+
     if negative and positive:
         maxval = max(-scalars.min(), scalars.max())
         if maxval > display_threshold:
@@ -257,10 +251,9 @@ def plot_stat(args, conte_atlas, rest_atlas):
     surf.module_manager.scalar_lut_manager.lut.table = lut
     if dual_split:
         surf2.module_manager.scalar_lut_manager.lut.table = lut
-    surf.module_manager.scalar_lut_manager.show_scalar_bar = False
     surf.module_manager.scalar_lut_manager.show_legend = False
     surf.module_manager.scalar_lut_manager.label_text_property.font_size = 7
-    surf.module_manager.scalar_lut_manager.show_scalar_bar = True
+    surf.module_manager.scalar_lut_manager.number_of_labels = 4
     surf.module_manager.scalar_lut_manager.show_legend = True
     mlab.draw()
 
@@ -308,7 +301,7 @@ def main():
                         help='output full file path')
     parser.add_argument('-c', '--conte_atlas',
                         help='Conte69 32k mesh atlas folder')
-    parser.add_argument('-r', '--resting_atlas',
+    parser.add_argument('-r', '--rest_atlas',
                         help='Connectome resting atlas')
     parser.add_argument('-t', '--threshold', type=float, default=2.3,
                         help='set threshold (default 2.3)')
@@ -328,13 +321,10 @@ def main():
 
     if args.conte_atlas:
         conte_atlas = os.path.abspath(args.conte_atlas)
-
-    if args.resting_atlas:
-        rest_atlas = os.path.abspath(args.resting_atlas)
-
     if not os.path.exists(conte_atlas):
         raise IOError('Surfaces atlas not found.')
-
+    if args.rest_atlas:
+        rest_atlas = os.path.abspath(args.rest_atlas)
     if not os.path.exists(rest_atlas):
         raise IOError('Rest atlas not found.')
 

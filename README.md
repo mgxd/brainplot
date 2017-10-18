@@ -4,7 +4,7 @@
 #### Installation
 
 * `git clone [[ repository ]] && cd [[ repository ]]`
-* `pip install -r requirements.txt`
+* `python setup.py install`
 
 
 #### Additional requirements

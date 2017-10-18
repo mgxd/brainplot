@@ -1,3 +1,5 @@
-# until nibabel 2.2 releases
-git+https://github.com/nipy/nibabel.git#egg=nibabel
+# will grab packages from setup.py and search for them on pypi
+
+--index-url https://pypi.python.org/simple/
+
 .

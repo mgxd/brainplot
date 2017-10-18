@@ -4,3 +4,6 @@
 testdata/
 *.png
 *.ipynb
+/brainplot.egg-info
+__pycache__/
+*.pyc
