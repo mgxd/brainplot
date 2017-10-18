@@ -25,6 +25,6 @@ if __name__ == '__main__':
           download_url=DOWNLOAD_URL,
           version=VERSION,
           packages=find_packages(),
-          install_requires=['mayavi', 'matplotlib', 'xvfbwrapper'],
+          install_requires=['mayavi', 'matplotlib', 'xvfbwrapper', 'nibabel'],
           entry_points={'console_scripts':
                         ['brainplot=brainplot.plotting:main']})
