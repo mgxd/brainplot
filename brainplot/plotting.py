@@ -24,6 +24,9 @@ from mayavi import mlab
 from tvtk.api import tvtk
 
 from .utils import CONTE69_ATLAS, REST_ATLAS
+# or allow use of environmental variables
+CONTE69_ATLAS = os.environ.get('CONTE69_ATLAS', CONTE69_ATLAS)
+REST_ATLAS = os.environ.get('REST_ATLAS', REST_ATLAS)
 
 def rotation_matrix(axis=[0,0,1], theta=np.pi):
     """
